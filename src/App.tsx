@@ -1,46 +1,70 @@
 import React from 'react';
-import logo from './logo.svg';
+import { connect } from 'react-redux';
+import { Todo, fetchTodos, deleteTodo } from './store/actions';
+import { StoreState } from './store/reducers';
 import './App.css';
 
 interface AppProps {
-  color?: string;
+  todos: Todo[];
+  fetchTodos: Function;
+  deleteTodo: typeof deleteTodo;
 }
 
 interface AppState {
-  counter: number;
+  fetching: boolean;
 }
 
 class App extends React.Component<AppProps, AppState> {
-  state = {
-    counter: 0
+  constructor(props: AppProps) {
+    super(props);
+
+    this.state = { fetching: false };
+  }
+
+  componentDidUpdate(prevProps: AppProps): void {
+    if (!prevProps.todos.length && this.props.todos.length) {
+      this.setState({ fetching: false });
+    }
+  }
+
+  onButtonClick = (): void => {
+    this.props.fetchTodos();
+
+    this.setState({ fetching: true });
   };
 
-  setIncrement = (): void => {
-    this.setState({ counter: this.state.counter + 1 });
+  onTodoClick = (id: number): void => {
+    this.props.deleteTodo(id);
   };
+
+  renderList(): JSX.Element[] {
+    return this.props.todos.map((todo: Todo) => {
+      return (
+        <div onClick={() => this.onTodoClick(todo.id)} key={todo.id}>
+          {todo.title}
+        </div>
+      );
+    });
+  }
 
   render() {
+    console.log(this.props.todos);
     return (
       <div className="App">
         <header className="App-header">
-          <button onClick={this.setIncrement}>Increment</button>
-          <button onClick={this.setIncrement}>Decrement</button>
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          <button onClick={this.onButtonClick}>Fetch</button>
+          {this.state.fetching ? 'Loading' : null}
+          {this.renderList()}
         </header>
       </div>
     );
   }
 }
 
-export default App;
+const mapStateToProps = ({ todos }: StoreState): { todos: Todo[] } => {
+  return {
+    todos
+  };
+};
+
+export default connect(mapStateToProps, { fetchTodos, deleteTodo })(App);
